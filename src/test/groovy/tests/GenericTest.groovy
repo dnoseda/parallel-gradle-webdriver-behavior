@@ -56,7 +56,9 @@ class GenericTest extends GebReportingTest implements SauceOnDemandSessionIdProv
             "yahoo":{ GenericTest context, String query ->
 
                 context.go "http://www.yahoo.com"
-                context.waitFor("#UHSearchBox")
+                waitFor({
+                    $("#UHSearchBox")
+                })
                 context.$("#UHSearchBox").value(query)
                 context.$("#UHSearchWeb").click()
             }
@@ -66,11 +68,15 @@ class GenericTest extends GebReportingTest implements SauceOnDemandSessionIdProv
 
     @Parameters
     static data(){
-        return ["yahoo","google"].collect{searcher->
-                ["dulce de leche", "caramelo"].collect({
-                    [it, searcher] as Object[]
+        def tests = []
+
+        ["yahoo","google"].each{searcher->
+                ["dulce de leche", "caramelo"].each({ query ->
+                    tests << ([query, searcher] as Object[])
                 })
         }
+
+        return tests
     }
 
     protected String sessionId;
