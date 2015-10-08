@@ -11,3 +11,4 @@ drivers
 .classpath
 .project
 *.orig
+*.log
