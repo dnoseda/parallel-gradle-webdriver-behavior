@@ -1,0 +1,107 @@
+apply plugin: "groovy"
+apply plugin: "idea"
+apply plugin: 'project-report'
+
+repositories {
+    mavenCentral()
+    maven {url "http://repository-saucelabs.forge.cloudbees.com/release"}
+    maven {url "https://github.com/mercadopago/sdk-java/raw/master/releases"}
+
+}
+
+// The drivers we want to use
+ext.drivers = ["mobile", "chrome","phantomjs"]
+
+dependencies {
+    def gebVersion = "0.9.0-RC-3"
+    def seleniumVersion = "2.30.0"
+    testCompile ('org.codehaus.groovy.modules.http-builder:http-builder:0.5.2' ) { exclude group:'org.codehaus.groovy', module:'groovy' }
+    // If using Spock, need to depend on geb-spock
+    testCompile "org.gebish:geb-spock:$gebVersion"
+    testCompile "org.spockframework:spock-core:0.7-groovy-2.0"
+
+    // If using JUnit, need to depend on geb-junit (3 or 4)
+    testCompile "org.gebish:geb-junit4:$gebVersion"
+    testCompile "com.saucelabs:sauce_junit:1.0.19"
+    testCompile "com.ning:async-http-client:1.7.4"
+    testCompile "com.mercadopago:sdk:0.2.1"
+    testCompile "org.seleniumhq.selenium:selenium-firefox-driver:2.30.0"
+    testCompile "org.seleniumhq.selenium:selenium-remote-driver:2.43.1"
+    testCompile "com.github.detro.ghostdriver:phantomjsdriver:1.1.0"
+
+    // Drivers
+    drivers.findAll({ !(it in ["mobile","phantomjs"]) }).each { driver ->
+        testCompile "org.seleniumhq.selenium:selenium-remote-driver:$seleniumVersion"
+    }
+    
+    testCompile "org.seleniumhq.selenium:selenium-support:$seleniumVersion"
+    
+}
+
+private void downloadDriver(File filedriver, String path) {
+    println "Checkeando driver ${filedriver}"
+    if (!filedriver.exists()) {
+        println "NO EXISTE EL DRIVER"
+        ant.get(src: path, dest: 'driver.zip')
+        ant.unzip(src: 'driver.zip', dest: filedriver.parent)
+        ant.delete(file: 'driver.zip')
+        ant.chmod(file: filedriver, perm: '777')
+    }
+}
+
+drivers.each { driver ->
+    task "${driver}Test"(type: Test) {
+        outputs.upToDateWhen { false }
+
+        afterTest { desc, result ->
+            println " ${desc.name} with result: ${result.resultType}"
+        }
+        //drivers
+        def chromeDriver = new File('drivers/chrome/chromedriver')
+        systemProperty('webdriver.chrome.driver', chromeDriver.absolutePath)
+        enabled = true
+        systemProperty "geb.build.reportsDir", reporting.file("$name")
+        //parameters
+        systemProperty "geb.env", driver
+        systemProperty "filter", System.properties["filter"]
+        systemProperty "env", System.properties["env"]
+        systemProperty "scope", System.properties["scope"]
+        systemProperty ("junit.parallel.threads", System.properties["junit.parallel.threads"] ?: "2")
+		systemProperty ("chows", System.properties["chows"] ?: null)
+        systemProperty ("as_public", System.properties["as_public"] ?: null)
+        systemProperty ("do_log", System.properties["do_log"] ?: null)
+        systemProperty ("remote", System.properties["remote"] ?: null)
+
+    }
+}
+
+test {
+
+    def chromeDriver = new File('drivers/chrome/chromedriver')
+    downloadDriver(chromeDriver, "http://chromedriver.storage.googleapis.com/2.19/chromedriver_mac32.zip")
+    systemProperty('webdriver.chrome.driver', chromeDriver.absolutePath)
+
+    def phantomFile = "phantomjs-1.9.2-macosx"
+    def phantomDriverPath = "drivers/phantom/${phantomFile}/bin/phantomjs"
+    def phantomDriver = new File(phantomDriverPath)
+    if(phantomDriver.exists()){
+        println "PhantomJsDriver Exists in ${phantomDriverPath}"
+    }else{
+        println "PhantomJsDriver does not exists in ${phantomDriverPath}"
+        def phantomZipFile = new File("drivers/phantom/${phantomFile}.zip")
+        downloadDriver(phantomZipFile,"https://phantomjs.googlecode.com/files/${phantomFile}.zip")
+        systemProperty('phantomjs.binary.path',phantomDriverPath)
+        ant.delete(dir: 'build/reports')
+        ant.chmod(file: phantomDriverPath, perm:'777')
+        ant.touch(file: 'phantomjsdriver.log')
+        ant.chmod(file: 'phantomjsdriver.log', perm:'777')	
+    }
+
+    dependsOn drivers.collect { tasks["${it}Test"] }
+    enabled = true
+    
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.3'
+}
