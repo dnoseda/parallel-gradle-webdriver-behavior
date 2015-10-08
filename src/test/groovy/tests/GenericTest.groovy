@@ -49,12 +49,22 @@ class GenericTest extends GebReportingTest implements SauceOnDemandSessionIdProv
 
     @Test
     void googleIt(){
-        def behaviors = BehaviorProvider.getBehaviors() 
         try{
+            /**/
+            def behaviors = BehaviorProvider.getBehaviors() 
             def closure = behaviors[mySearcher]
             closure.resolveStrategy = Closure.DELEGATE_FIRST
             closure.delegate = this
             closure(myName)
+            /** /
+
+            go "https://www.mercadopago.com/beta/checkout/pay?pref_id=167834996-a78aa4d8-50e2-45cc-93c9-e44d825a0fa0"
+            waitFor{$("input#email")}
+
+            $("input#email").value(myName)
+            $("select#pmtOption").value("nativa")
+            /**/
+
         }catch(Throwable e){
             throw StackTraceUtils.deepSanitize(e)
         }
@@ -71,6 +81,7 @@ class GenericTest extends GebReportingTest implements SauceOnDemandSessionIdProv
         }
 
         return tests
+        //return [(["hola","google"] as Object[])]
     }
 
     protected String sessionId;
