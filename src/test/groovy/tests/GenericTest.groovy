@@ -39,21 +39,38 @@ class GenericTest extends GebReportingTest implements SauceOnDemandSessionIdProv
     }
 
 
+
     String myName
-    public GenericTest(String name) {
+    String mySearcher
+    public GenericTest(String name, String searcher) {
         myName = name
+        mySearcher = searcher
     }
 
     @Test
     void googleIt(){
-        go "http://www.google.com?q=${myName.replaceAll(/\s/,'+')}"
+        def behaviors = [
+            "google": { GenericTest context, String query ->
+                context.go "http://www.google.com?q=${query.replaceAll(/\s/,'+')}"
+            },
+            "yahoo":{ GenericTest context, String query ->
+
+                context.go "http://www.yahoo.com"
+                context.waitFor("#UHSearchBox")
+                context.$("#UHSearchBox").value(query)
+                context.$("#UHSearchWeb").click()
+            }
+        ]
+        behaviors[mySearcher](this, myName)
     }
 
     @Parameters
     static data(){
-        return ["dulce de leche", "caramelo"].collect({
-            [it] as Object[]
-        })
+        return ["yahoo","google"].collect{searcher->
+                ["dulce de leche", "caramelo"].collect({
+                    [it, searcher] as Object[]
+                })
+        }
     }
 
     protected String sessionId;
