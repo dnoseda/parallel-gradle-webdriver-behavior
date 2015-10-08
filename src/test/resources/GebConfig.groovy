@@ -48,6 +48,31 @@ def generateDriver(DesiredCapabilities capabilities, Closure defaultGenerator){
 	return driver
 }
 
+
+
+
+def getPosition(){
+
+    Map macWinPos = [
+        0: "0,0",
+        1: "0,400",
+        2: "640,0",
+        3: "640,400"
+    ]
+
+    def threadId = Thread.currentThread().getId()
+    println "${threadId}:size ${macWinPos.size()}"
+    def pos = Long.valueOf(threadId % macWinPos.size()).intValue()
+    def winPos = macWinPos[pos]
+    println "${threadId}: ${winPos}"
+    return "--window-position=${winPos}"
+
+}
+
+
+
+
+
 /**/
 environments {
 
@@ -56,6 +81,8 @@ environments {
 			def chOp = new ChromeOptions()
 			chOp.addArguments("--user-agent=Mozilla/5.0 (X11; Linux i686 (x86_64)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.71 Safari/537.36")
 			chOp.addArguments("--disable-web-security")
+            chOp.addArguments("--window-size=640,400")
+            chOp.addArguments(getPosition())
 			DesiredCapabilities capabilities = DesiredCapabilities.chrome()
 			capabilities.setCapability(ChromeOptions.CAPABILITY, chOp)
 			

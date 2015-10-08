@@ -49,21 +49,15 @@ class GenericTest extends GebReportingTest implements SauceOnDemandSessionIdProv
 
     @Test
     void googleIt(){
-        def behaviors = [
-            "google": { GenericTest context, String query ->
-                go "http://www.google.com?q=${query.replaceAll(/\s/,'+')}"
-            },
-            "yahoo":{ GenericTest context, String query ->
-
-                go "http://www.yahoo.com"
-                waitFor({
-                    $("#UHSearchBox")
-                })
-                $("#UHSearchBox").value(query)
-                $("#UHSearchWeb").click()
-            }
-        ]
-        behaviors[mySearcher](this, myName)
+        def behaviors = BehaviorProvider.getBehaviors() 
+        try{
+            def closure = behaviors[mySearcher]
+            closure.resolveStrategy = Closure.DELEGATE_FIRST
+            closure.delegate = this
+            closure(myName)
+        }catch(Throwable e){
+            throw StackTraceUtils.deepSanitize(e)
+        }
     }
 
     @Parameters
