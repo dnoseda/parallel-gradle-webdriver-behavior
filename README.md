@@ -24,8 +24,8 @@ Gradle use version 1.8
 Best performance of the test, update el chromedriver: 
 http://chromedriver.storage.googleapis.com/2.12/chromedriver_mac32.zip or last
 
-Option for chrome config:
 http://code.google.com/p/selenium/wiki/ChromeDriver
 
+Option for chrome config:
 
 http://peter.sh/experiments/chromium-command-line-switches/
